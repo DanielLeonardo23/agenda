@@ -1,8 +1,19 @@
 // @ts-nocheck
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { suggestFinancialCorrections } from '@/ai/flows/suggest-corrections';
-import type { FinancialData, Correction, SavingsSuggestion } from '@/lib/types';
+import { addTransaction } from '@/lib/data';
+import type { FinancialData, Correction, SavingsSuggestion, AddTransactionData } from '@/lib/types';
+
+
+export async function addTransactionAction(data: AddTransactionData) {
+  const result = await addTransaction(data);
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
 
 export async function getFinancialHealthSuggestions(data: FinancialData): Promise<{ success: boolean; corrections?: Correction[]; savingsSuggestions?: SavingsSuggestion[]; error?: string; }> {
   try {

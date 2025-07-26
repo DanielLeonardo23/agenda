@@ -22,23 +22,58 @@ import {
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle } from "lucide-react";
+import { addTransactionAction } from "@/app/actions";
+import { Loader2 } from "lucide-react";
 
 export function AddTransactionDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [type, setType] = useState("expense");
+  const [isPending, setIsPending] = useState(false);
+  const [type, setType] = useState<"income" | "expense">("expense");
   const [date, setDate] = useState<Date | undefined>(new Date());
   const { toast } = useToast();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Aquí normalmente manejarías el envío del formulario, por ejemplo, a una API o gestión de estado
-    // Para este ejemplo, solo mostraremos un aviso y cerraremos el diálogo
-    toast({
-      title: "Transacción Agregada",
-      description: "Tu nueva transacción ha sido registrada exitosamente.",
+    setIsPending(true);
+
+    const formData = new FormData(event.currentTarget);
+    const amount = formData.get("amount") as string;
+    const category = formData.get("category") as string;
+    const description = formData.get("description") as string;
+
+    if (!date) {
+        toast({
+            variant: "destructive",
+            title: "Error de Validación",
+            description: "Por favor, selecciona una fecha.",
+        });
+        setIsPending(false);
+        return;
+    }
+
+    const result = await addTransactionAction({
+      type,
+      amount: parseFloat(amount),
+      category,
+      date,
+      description,
     });
-    setOpen(false);
+
+    setIsPending(false);
+
+    if (result.success) {
+        toast({
+            title: "Transacción Agregada",
+            description: "Tu nueva transacción ha sido registrada exitosamente.",
+        });
+        setOpen(false);
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Error al Guardar",
+            description: result.error,
+        });
+    }
   };
 
   return (
@@ -57,7 +92,7 @@ export function AddTransactionDialog({ children }: { children: React.ReactNode }
               <Label htmlFor="type" className="text-right">
                 Tipo
               </Label>
-              <Select value={type} onValueChange={setType}>
+              <Select name="type" value={type} onValueChange={(value) => setType(value as "income" | "expense")}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Selecciona el tipo" />
                 </SelectTrigger>
@@ -73,6 +108,7 @@ export function AddTransactionDialog({ children }: { children: React.ReactNode }
               </Label>
               <Input
                 id="amount"
+                name="amount"
                 type="number"
                 placeholder="S/0.00"
                 className="col-span-3"
@@ -85,6 +121,7 @@ export function AddTransactionDialog({ children }: { children: React.ReactNode }
               </Label>
               <Input
                 id="category"
+                name="category"
                 placeholder="Ej. Comida"
                 className="col-span-3"
                 required
@@ -102,13 +139,17 @@ export function AddTransactionDialog({ children }: { children: React.ReactNode }
               </Label>
               <Input
                 id="description"
+                name="description"
                 placeholder="Detalles opcionales"
                 className="col-span-3"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Guardar Transacción</Button>
+            <Button type="submit" disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Guardar Transacción
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

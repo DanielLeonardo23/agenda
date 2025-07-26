@@ -4,11 +4,14 @@ import * as React from "react"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import type { Transaction } from "@/lib/types"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
 
 export function TransactionsCalendar({ transactions }: { transactions: Transaction[] }) {
-  const [date, setDate] = React.useState<Date | undefined>(new Date())
+  const [date, setDate] = React.useState<Date | undefined>(undefined);
+  
+  React.useEffect(() => {
+    setDate(new Date());
+  }, []);
+
 
   const transactionsByDay = React.useMemo(() => {
     return transactions.reduce((acc, transaction) => {
@@ -70,6 +73,7 @@ export function TransactionsCalendar({ transactions }: { transactions: Transacti
           components={{
             DayContent: DayWithDots
           }}
+          initialFocus
         />
       </CardContent>
     </Card>

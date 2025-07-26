@@ -1,15 +1,14 @@
 import { getFinancialData } from "@/lib/data";
 import { AppSidebar } from "@/components/layout/sidebar";
 import { DashboardHeader } from "@/components/layout/header";
-import { SidebarInset } from "@/components/ui/sidebar";
 import { OverviewCards } from "@/components/dashboard/overview-cards";
 import { ExpenseChart } from "@/components/dashboard/expense-chart";
 import { TransactionsCalendar } from "@/components/dashboard/transactions-calendar";
 import { UpcomingPayments } from "@/components/dashboard/upcoming-payments";
 import { AiSuggestions } from "@/components/dashboard/ai-suggestions";
 
-export default function DashboardPage() {
-  const financialData = getFinancialData();
+export default async function DashboardPage() {
+  const financialData = await getFinancialData();
 
   return (
     <div className="flex min-h-screen w-full bg-background">
