@@ -12,11 +12,11 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const PersonalizedSavingsTipsInputSchema = z.object({
-  income: z.number().describe('The user monthly income.'),
-  expenses: z.record(z.string(), z.number()).describe('A record of the user expenses, grouped by category.'),
+  income: z.number().describe('The user monthly income in PEN.'),
+  expenses: z.record(z.string(), z.number()).describe('A record of the user expenses, grouped by category in PEN.'),
   financialGoals: z.string().describe('The user financial goals.'),
-  currentBalance: z.number().describe('The user current balance.'),
-  upcomingPayments: z.record(z.string(), z.number()).describe('A record of the user upcoming payments, grouped by category.'),
+  currentBalance: z.number().describe('The user current balance in PEN.'),
+  upcomingPayments: z.record(z.string(), z.number()).describe('A record of the user upcoming payments, grouped by category in PEN.'),
 });
 export type PersonalizedSavingsTipsInput = z.infer<typeof PersonalizedSavingsTipsInputSchema>;
 
@@ -35,16 +35,16 @@ const prompt = ai.definePrompt({
   name: 'personalizedSavingsTipsPrompt',
   input: {schema: PersonalizedSavingsTipsInputSchema},
   output: {schema: PersonalizedSavingsTipsOutputSchema},
-  prompt: `You are a personal finance advisor. Analyze the user's financial situation and provide personalized, actionable savings tips tailored to their specific situation.
+  prompt: `You are a personal finance advisor. Analyze the user's financial situation and provide personalized, actionable savings tips tailored to their specific situation. The currency is in Peruvian Soles (PEN).
 
   Consider the user's income, expenses, financial goals, current balance and upcoming payments.
 
-  Income: {{income}}
-  Expenses: {{#each expenses}}{{@key}}: {{this}}
+  Income: S/{{income}}
+  Expenses: {{#each expenses}}{{@key}}: S/{{this}}
   {{/each}}
   Financial Goals: {{financialGoals}}
-  Current Balance: {{currentBalance}}
-  Upcoming Payments: {{#each upcomingPayments}}{{@key}}: {{this}}
+  Current Balance: S/{{currentBalance}}
+  Upcoming Payments: {{#each upcomingPayments}}{{@key}}: S/{{this}}
   {{/each}}
 
   Provide at least 3 savings tips.

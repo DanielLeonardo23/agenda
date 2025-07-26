@@ -30,7 +30,7 @@ export function ExpenseChart({ transactions }: ExpenseChartProps) {
     total,
   }));
 
-  const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
+  const formatCurrency = (value: number) => `S/${value.toFixed(2)}`;
 
   return (
     <Card>
@@ -55,7 +55,7 @@ export function ExpenseChart({ transactions }: ExpenseChartProps) {
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => `$${value}`}
+              tickFormatter={(value) => `S/${value}`}
             />
             <Tooltip
                 cursor={{ fill: 'hsl(var(--accent) / 0.3)' }}

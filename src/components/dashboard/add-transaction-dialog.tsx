@@ -74,7 +74,7 @@ export function AddTransactionDialog({ children }: { children: React.ReactNode }
               <Input
                 id="amount"
                 type="number"
-                placeholder="0.00"
+                placeholder="S/0.00"
                 className="col-span-3"
                 required
               />

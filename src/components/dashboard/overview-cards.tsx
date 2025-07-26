@@ -21,9 +21,9 @@ export function OverviewCards({ data }: { data: FinancialData }) {
   const upcomingPaymentsAmount = recurringPayments.reduce((sum, p) => sum + p.amount, 0);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("es-PE", {
       style: "currency",
-      currency: "USD",
+      currency: "PEN",
     }).format(amount);
   };
 
