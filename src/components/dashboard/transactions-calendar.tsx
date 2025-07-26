@@ -8,6 +8,7 @@ import type { Transaction } from "@/lib/types"
 export function TransactionsCalendar({ transactions }: { transactions: Transaction[] }) {
   const [date, setDate] = React.useState<Date | undefined>(undefined);
   
+  // Set initial date on client-side only to avoid hydration mismatch
   React.useEffect(() => {
     setDate(new Date());
   }, []);
@@ -63,7 +64,7 @@ export function TransactionsCalendar({ transactions }: { transactions: Transacti
         <CardDescription>Visualiza tu flujo financiero diario.</CardDescription>
       </CardHeader>
       <CardContent className="flex justify-center">
-        <Calendar
+        {date && <Calendar
           mode="single"
           selected={date}
           onSelect={setDate}
@@ -74,7 +75,7 @@ export function TransactionsCalendar({ transactions }: { transactions: Transacti
             DayContent: DayWithDots
           }}
           initialFocus
-        />
+        />}
       </CardContent>
     </Card>
   )
