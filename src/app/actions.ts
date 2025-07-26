@@ -3,8 +3,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { suggestFinancialCorrections } from '@/ai/flows/suggest-corrections';
-import { addTransaction } from '@/lib/data';
-import type { FinancialData, Correction, SavingsSuggestion, AddTransactionData } from '@/lib/types';
+import { addTransaction, setInitialBalance as setInitialBalanceDb, addRecurringPayment as addRecurringPaymentDb } from '@/lib/data';
+import type { FinancialData, Correction, SavingsSuggestion, AddTransactionData, AddRecurringPaymentData } from '@/lib/types';
 
 
 export async function addTransactionAction(data: AddTransactionData) {
@@ -14,6 +14,23 @@ export async function addTransactionAction(data: AddTransactionData) {
   }
   return result;
 }
+
+export async function setInitialBalanceAction(balance: number) {
+  const result = await setInitialBalanceDb(balance);
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
+
+export async function addRecurringPaymentAction(data: AddRecurringPaymentData) {
+  const result = await addRecurringPaymentDb(data);
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
+
 
 export async function getFinancialHealthSuggestions(data: FinancialData): Promise<{ success: boolean; corrections?: Correction[]; savingsSuggestions?: SavingsSuggestion[]; error?: string; }> {
   try {
@@ -37,15 +54,12 @@ export async function getFinancialHealthSuggestions(data: FinancialData): Promis
       sectionLimits,
     });
     
-    // The AI might return a stringified JSON, so we need to parse it.
-    // It also might return an object directly. We handle both cases.
     const corrections = typeof result.corrections === 'string' ? JSON.parse(result.corrections) : result.corrections;
     const savingsSuggestions = typeof result.savingsSuggestions === 'string' ? JSON.parse(result.savingsSuggestions) : result.savingsSuggestions;
 
     return { success: true, corrections, savingsSuggestions };
   } catch (error) {
     console.error("Error getting financial health suggestions:", error);
-    // Attempt to give a more specific error message if possible
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     return { success: false, error: `Failed to get suggestions from AI. Details: ${errorMessage}` };
   }

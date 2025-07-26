@@ -8,7 +8,7 @@ import { DollarSign, ArrowUp, ArrowDown, CalendarClock } from "lucide-react";
 import type { FinancialData } from "@/lib/types";
 
 export function OverviewCards({ data }: { data: FinancialData }) {
-  const { currentBalance, transactions, recurringPayments } = data;
+  const { currentBalance, transactions, recurringPayments, initialBalance } = data;
   
   const totalIncome = transactions
     .filter(t => t.type === 'income')

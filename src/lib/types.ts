@@ -5,7 +5,6 @@ export type Transaction = {
   date: string; // ISO string
   category: string;
   description: string;
-  userId: string;
 };
 
 export type RecurringPayment = {
@@ -14,7 +13,6 @@ export type RecurringPayment = {
   amount: number; // in PEN
   dayOfMonth: number;
   category: string;
-  userId: string;
 };
 
 export type Budget = {
@@ -22,7 +20,6 @@ export type Budget = {
   category: string;
   limit: number; // in PEN
   recurring: boolean;
-  userId: string;
 };
 
 export type FinancialData = {
@@ -30,6 +27,7 @@ export type FinancialData = {
   recurringPayments: RecurringPayment[];
   budgets: Budget[];
   currentBalance: number; // in PEN
+  initialBalance: number; // in PEN
 };
 
 export type Correction = {
@@ -49,4 +47,11 @@ export interface AddTransactionData {
     category: string;
     date: Date;
     description?: string;
+}
+
+export interface AddRecurringPaymentData {
+  name: string;
+  amount: number;
+  dayOfMonth: number;
+  category: string;
 }

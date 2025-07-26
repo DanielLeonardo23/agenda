@@ -1,16 +1,17 @@
-import { getDatabase, ref, push, set, get } from 'firebase/database';
-import type { FinancialData, Transaction, AddTransactionData, RecurringPayment, Budget } from './types';
+import { getDatabase, ref, push, set, get, update } from 'firebase/database';
+import type { FinancialData, Transaction, AddTransactionData, RecurringPayment, Budget, AddRecurringPaymentData } from './types';
 import { firebaseApp } from './firebase';
 
 const db = getDatabase(firebaseApp);
 
 export async function getFinancialData(): Promise<FinancialData> {
-  const transactionsRef = ref(db, 'transactions');
-  const snapshot = await get(transactionsRef);
-  
+  const rootRef = ref(db);
+  const snapshot = await get(rootRef);
+  const dbData = snapshot.val() || {};
+
   const transactions: Transaction[] = [];
-  if (snapshot.exists()) {
-    const data = snapshot.val();
+  if (dbData.transactions) {
+    const data = dbData.transactions;
     for (const key in data) {
       transactions.push({
         id: key,
@@ -18,6 +19,19 @@ export async function getFinancialData(): Promise<FinancialData> {
       });
     }
   }
+
+  const recurringPayments: RecurringPayment[] = [];
+   if (dbData.recurringPayments) {
+    const data = dbData.recurringPayments;
+    for (const key in data) {
+      recurringPayments.push({
+        id: key,
+        ...data[key]
+      });
+    }
+  }
+
+  const initialBalance = dbData.initialBalance || 0;
 
   const totalIncome = transactions
     .filter(t => t.type === 'income')
@@ -27,9 +41,9 @@ export async function getFinancialData(): Promise<FinancialData> {
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
   
-  const currentBalance = totalIncome - totalExpenses;
+  const currentBalance = initialBalance + totalIncome - totalExpenses;
 
-  const recurringPayments: RecurringPayment[] = [];
+  // Mock data for budgets as it's not implemented yet
   const budgets: Budget[] = [];
 
   return {
@@ -37,8 +51,10 @@ export async function getFinancialData(): Promise<FinancialData> {
     recurringPayments,
     budgets,
     currentBalance,
+    initialBalance,
   };
 }
+
 
 export async function addTransaction(transactionData: AddTransactionData) {
     try {
@@ -56,4 +72,35 @@ export async function addTransaction(transactionData: AddTransactionData) {
         const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
         return { success: false, error: errorMessage };
     }
+}
+
+export async function setInitialBalance(balance: number) {
+    try {
+        const rootRef = ref(db);
+        await update(rootRef, {
+            initialBalance: Number(balance)
+        });
+        return { success: true };
+    } catch (e) {
+        console.error("Error al establecer el saldo inicial: ", e);
+        const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+        return { success: false, error: errorMessage };
+    }
+}
+
+export async function addRecurringPayment(paymentData: AddRecurringPaymentData) {
+  try {
+    const paymentsRef = ref(db, 'recurringPayments');
+    const newPaymentRef = push(paymentsRef);
+    await set(newPaymentRef, {
+      ...paymentData,
+      amount: Number(paymentData.amount),
+      dayOfMonth: Number(paymentData.dayOfMonth),
+    });
+    return { success: true, id: newPaymentRef.key };
+  } catch(e) {
+    console.error("Error al añadir el pago recurrente: ", e);
+    const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+    return { success: false, error: errorMessage };
+  }
 }

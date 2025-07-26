@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -22,9 +23,9 @@ import {
 
 const menuItems = [
   { href: "/", label: "Panel", icon: LayoutDashboard },
-  { href: "#", label: "Transacciones", icon: ArrowRightLeft },
-  { href: "#", label: "Presupuestos", icon: PiggyBank },
-  { href: "#", label: "Configuración", icon: Settings },
+  { href: "/transactions", label: "Transacciones", icon: ArrowRightLeft },
+  { href: "/budgets", label: "Presupuestos", icon: PiggyBank },
+  { href: "/settings", label: "Configuración", icon: Settings },
 ];
 
 export function AppSidebar() {
