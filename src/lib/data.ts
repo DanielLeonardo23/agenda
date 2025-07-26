@@ -5,19 +5,17 @@ import { firebaseApp } from './firebase';
 const db = getDatabase(firebaseApp);
 
 export async function getFinancialData(): Promise<FinancialData> {
-  // Accede directamente al nodo 'transactions'
   const transactionsRef = ref(db, 'transactions');
   const snapshot = await get(transactionsRef);
   
   const transactions: Transaction[] = [];
   if (snapshot.exists()) {
     const data = snapshot.val();
-    // Itera sobre los datos para convertirlos en un array
     for (const key in data) {
       transactions.push({
         id: key,
         ...data[key]
-      } as Transaction);
+      });
     }
   }
 
@@ -31,7 +29,6 @@ export async function getFinancialData(): Promise<FinancialData> {
   
   const currentBalance = totalIncome - totalExpenses;
 
-  // Por ahora, los pagos recurrentes y los presupuestos están vacíos.
   const recurringPayments: RecurringPayment[] = [];
   const budgets: Budget[] = [];
 
@@ -45,7 +42,6 @@ export async function getFinancialData(): Promise<FinancialData> {
 
 export async function addTransaction(transactionData: AddTransactionData) {
     try {
-        // Guarda las nuevas transacciones directamente en el nodo 'transactions'
         const transactionsRef = ref(db, 'transactions');
         const newTransactionRef = push(transactionsRef);
         await set(newTransactionRef, {
