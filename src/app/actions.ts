@@ -1,0 +1,41 @@
+// @ts-nocheck
+'use server';
+
+import { suggestFinancialCorrections } from '@/ai/flows/suggest-corrections';
+import type { FinancialData, Correction, SavingsSuggestion } from '@/lib/types';
+
+export async function getFinancialHealthSuggestions(data: FinancialData): Promise<{ success: boolean; corrections?: Correction[]; savingsSuggestions?: SavingsSuggestion[]; error?: string; }> {
+  try {
+    const financialEntries = JSON.stringify(data.transactions.map(t => ({
+      id: t.id,
+      amount: t.amount,
+      category: t.category,
+      type: t.type,
+      date: t.date
+    })));
+
+    const sectionLimits = JSON.stringify(
+      data.budgets.reduce((acc, budget) => {
+        acc[budget.category] = budget.limit;
+        return acc;
+      }, {} as Record<string, number>)
+    );
+
+    const result = await suggestFinancialCorrections({
+      financialEntries,
+      sectionLimits,
+    });
+    
+    // The AI might return a stringified JSON, so we need to parse it.
+    // It also might return an object directly. We handle both cases.
+    const corrections = typeof result.corrections === 'string' ? JSON.parse(result.corrections) : result.corrections;
+    const savingsSuggestions = typeof result.savingsSuggestions === 'string' ? JSON.parse(result.savingsSuggestions) : result.savingsSuggestions;
+
+    return { success: true, corrections, savingsSuggestions };
+  } catch (error) {
+    console.error("Error getting financial health suggestions:", error);
+    // Attempt to give a more specific error message if possible
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    return { success: false, error: `Failed to get suggestions from AI. Details: ${errorMessage}` };
+  }
+}
