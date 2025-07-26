@@ -1,22 +1,25 @@
-import { getFirestore, collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { getDatabase, ref, push, set, get } from 'firebase/database';
 import type { FinancialData, Transaction, AddTransactionData, RecurringPayment, Budget } from './types';
 import { firebaseApp } from './firebase';
 
-const db = getFirestore(firebaseApp);
-
-// This is a placeholder for user authentication.
-// In a real app, you would get this from your auth provider.
-const FAKE_USER_ID = "user123";
+const db = getDatabase(firebaseApp);
 
 export async function getFinancialData(): Promise<FinancialData> {
-  const transactionsCol = collection(db, "transactions");
-  const q = query(transactionsCol, where("userId", "==", FAKE_USER_ID));
-  const transactionSnapshot = await getDocs(q);
-
-  const transactions: Transaction[] = transactionSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-  } as Transaction));
+  // Accede directamente al nodo 'transactions'
+  const transactionsRef = ref(db, 'transactions');
+  const snapshot = await get(transactionsRef);
+  
+  const transactions: Transaction[] = [];
+  if (snapshot.exists()) {
+    const data = snapshot.val();
+    // Itera sobre los datos para convertirlos en un array
+    for (const key in data) {
+      transactions.push({
+        id: key,
+        ...data[key]
+      } as Transaction);
+    }
+  }
 
   const totalIncome = transactions
     .filter(t => t.type === 'income')
@@ -28,8 +31,7 @@ export async function getFinancialData(): Promise<FinancialData> {
   
   const currentBalance = totalIncome - totalExpenses;
 
-  // For now, we'll keep these as empty arrays.
-  // You would fetch these from Firestore in a similar way.
+  // Por ahora, los pagos recurrentes y los presupuestos están vacíos.
   const recurringPayments: RecurringPayment[] = [];
   const budgets: Budget[] = [];
 
@@ -43,17 +45,19 @@ export async function getFinancialData(): Promise<FinancialData> {
 
 export async function addTransaction(transactionData: AddTransactionData) {
     try {
-        const docRef = await addDoc(collection(db, "transactions"), {
+        // Guarda las nuevas transacciones directamente en el nodo 'transactions'
+        const transactionsRef = ref(db, 'transactions');
+        const newTransactionRef = push(transactionsRef);
+        await set(newTransactionRef, {
             ...transactionData,
             amount: Number(transactionData.amount),
             date: transactionData.date.toISOString(),
-            userId: FAKE_USER_ID,
         });
-        console.log("Document written with ID: ", docRef.id);
-        return { success: true, id: docRef.id };
+        console.log("Documento escrito con ID: ", newTransactionRef.key);
+        return { success: true, id: newTransactionRef.key };
     } catch (e) {
-        console.error("Error adding document: ", e);
-        const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+        console.error("Error al añadir el documento: ", e);
+        const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
         return { success: false, error: errorMessage };
     }
 }
