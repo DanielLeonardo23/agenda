@@ -38,7 +38,7 @@ export function InitialBalanceDialog({ children, onBalanceSet }: { children: Rea
               title: "Saldo Inicial Establecido",
               description: "Tu saldo inicial ha sido guardado exitosamente.",
           });
-          onBalanceSet(); // Refetch data
+          onBalanceSet(); // La actualización en tiempo real se encargará del resto
           setOpen(false);
       } else {
           toast({

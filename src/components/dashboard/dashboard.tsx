@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getFinancialData } from "@/lib/data";
+import { listenToFinancialData } from "@/lib/data";
 import type { FinancialData } from "@/lib/types";
 import { OverviewCards } from "@/components/dashboard/overview-cards";
 import { ExpenseChart } from "@/components/dashboard/expense-chart";
@@ -17,21 +17,16 @@ export function Dashboard() {
   const [financialData, setFinancialData] = useState<FinancialData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Function to refetch data, can be passed to child components
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const data = await getFinancialData();
-      setFinancialData(data);
-    } catch (error) {
-      console.error("Error fetching financial data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchData();
+    setLoading(true);
+    // listenToFinancialData ahora devuelve una función de limpieza.
+    const unsubscribe = listenToFinancialData((data) => {
+      setFinancialData(data);
+      setLoading(false);
+    });
+
+    // Se llama a la función de limpieza cuando el componente se desmonta.
+    return () => unsubscribe();
   }, []);
 
   if (loading || !financialData) {
@@ -57,11 +52,11 @@ export function Dashboard() {
 
   return (
     <>
-      {financialData.initialBalance === 0 && (
+      {financialData.initialBalance === 0 && financialData.transactions.length === 0 && (
         <div className="mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md">
             <p className="font-bold">¡Bienvenido a FinTrack!</p>
             <p>Parece que es tu primera vez aquí. Comienza estableciendo tu saldo inicial para obtener una visión precisa de tus finanzas.</p>
-             <InitialBalanceDialog onBalanceSet={fetchData}>
+             <InitialBalanceDialog onBalanceSet={() => { /* No necesita hacer nada aquí gracias a las actualizaciones en tiempo real */ }}>
                 <Button className="mt-2" variant="outline" size="sm">Establecer Saldo Inicial</Button>
             </InitialBalanceDialog>
         </div>

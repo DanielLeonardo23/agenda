@@ -1,58 +1,63 @@
-import { getDatabase, ref, push, set, get, update } from 'firebase/database';
+import { getDatabase, ref, push, set, get, update, onValue, off } from 'firebase/database';
 import type { FinancialData, Transaction, AddTransactionData, RecurringPayment, Budget, AddRecurringPaymentData } from './types';
 import { firebaseApp } from './firebase';
 
 const db = getDatabase(firebaseApp);
 
-export async function getFinancialData(): Promise<FinancialData> {
+export function listenToFinancialData(callback: (data: FinancialData) => void) {
   const rootRef = ref(db);
-  const snapshot = await get(rootRef);
-  const dbData = snapshot.val() || {};
 
-  const transactions: Transaction[] = [];
-  if (dbData.transactions) {
-    const data = dbData.transactions;
-    for (const key in data) {
-      transactions.push({
-        id: key,
-        ...data[key]
-      });
+  const listener = onValue(rootRef, (snapshot) => {
+    const dbData = snapshot.val() || {};
+    
+    const transactions: Transaction[] = [];
+    if (dbData.transactions) {
+      const data = dbData.transactions;
+      for (const key in data) {
+        transactions.push({
+          id: key,
+          ...data[key]
+        });
+      }
     }
-  }
 
-  const recurringPayments: RecurringPayment[] = [];
-   if (dbData.recurringPayments) {
-    const data = dbData.recurringPayments;
-    for (const key in data) {
-      recurringPayments.push({
-        id: key,
-        ...data[key]
-      });
+    const recurringPayments: RecurringPayment[] = [];
+    if (dbData.recurringPayments) {
+      const data = dbData.recurringPayments;
+      for (const key in data) {
+        recurringPayments.push({
+          id: key,
+          ...data[key]
+        });
+      }
     }
-  }
+    
+    const initialBalance = dbData.initialBalance || 0;
 
-  const initialBalance = dbData.initialBalance || 0;
+    const totalIncome = transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalIncome = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+    const totalExpenses = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const currentBalance = initialBalance + totalIncome - totalExpenses;
 
-  const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
-  
-  const currentBalance = initialBalance + totalIncome - totalExpenses;
+    // Mock data for budgets as it's not implemented yet
+    const budgets: Budget[] = [];
 
-  // Mock data for budgets as it's not implemented yet
-  const budgets: Budget[] = [];
+    callback({
+      transactions,
+      recurringPayments,
+      budgets,
+      currentBalance,
+      initialBalance,
+    });
+  });
 
-  return {
-    transactions,
-    recurringPayments,
-    budgets,
-    currentBalance,
-    initialBalance,
-  };
+  // Devuelve una función para cancelar la suscripción y limpiar el listener
+  return () => off(rootRef, 'value', listener);
 }
 
 
