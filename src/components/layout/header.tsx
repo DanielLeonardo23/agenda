@@ -11,13 +11,13 @@ export function DashboardHeader() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
       {isMobile && <SidebarTrigger />}
-      <h1 className="text-lg font-semibold md:text-xl">Dashboard</h1>
+      <h1 className="text-lg font-semibold md:text-xl">Panel</h1>
       <div className="flex-1" />
       <AddTransactionDialog>
-         <Button>Add Transaction</Button>
+         <Button>Agregar Transacción</Button>
       </AddTransactionDialog>
       <Avatar>
-        <AvatarImage src="https://placehold.co/40x40" alt="User" data-ai-hint="person avatar" />
+        <AvatarImage src="https://placehold.co/40x40" alt="Usuario" data-ai-hint="person avatar" />
         <AvatarFallback>U</AvatarFallback>
       </Avatar>
     </header>

@@ -14,8 +14,8 @@ export function UpcomingPayments({ recurringPayments }: { recurringPayments: Rec
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Upcoming Payments</CardTitle>
-        <CardDescription>Your scheduled recurring payments.</CardDescription>
+        <CardTitle>Pagos Próximos</CardTitle>
+        <CardDescription>Tus pagos recurrentes programados.</CardDescription>
       </CardHeader>
       <CardContent>
         <ul className="space-y-4">
@@ -28,7 +28,7 @@ export function UpcomingPayments({ recurringPayments }: { recurringPayments: Rec
                     </div>
                     <div>
                         <p className="font-medium">{payment.name}</p>
-                        <p className="text-sm text-muted-foreground">Due on day {payment.dayOfMonth}</p>
+                        <p className="text-sm text-muted-foreground">Vence el día {payment.dayOfMonth}</p>
                     </div>
                 </div>
                 <p className="font-semibold">{formatCurrency(payment.amount)}</p>

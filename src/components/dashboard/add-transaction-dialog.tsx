@@ -32,11 +32,11 @@ export function AddTransactionDialog({ children }: { children: React.ReactNode }
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Here you would typically handle form submission, e.g., to an API or state management
-    // For this example, we'll just show a toast and close the dialog
+    // Aquí normalmente manejarías el envío del formulario, por ejemplo, a una API o gestión de estado
+    // Para este ejemplo, solo mostraremos un aviso y cerraremos el diálogo
     toast({
-      title: "Transaction Added",
-      description: "Your new transaction has been successfully recorded.",
+      title: "Transacción Agregada",
+      description: "Tu nueva transacción ha sido registrada exitosamente.",
     });
     setOpen(false);
   };
@@ -46,30 +46,30 @@ export function AddTransactionDialog({ children }: { children: React.ReactNode }
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Transaction</DialogTitle>
+          <DialogTitle>Agregar Nueva Transacción</DialogTitle>
           <DialogDescription>
-            Record your income or expense. Click save when you're done.
+            Registra tus ingresos o gastos. Haz clic en guardar cuando termines.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="type" className="text-right">
-                Type
+                Tipo
               </Label>
               <Select value={type} onValueChange={setType}>
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder="Selecciona el tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
+                  <SelectItem value="expense">Gasto</SelectItem>
+                  <SelectItem value="income">Ingreso</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="amount" className="text-right">
-                Amount
+                Monto
               </Label>
               <Input
                 id="amount"
@@ -81,34 +81,34 @@ export function AddTransactionDialog({ children }: { children: React.ReactNode }
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="category" className="text-right">
-                Category
+                Categoría
               </Label>
               <Input
                 id="category"
-                placeholder="e.g. Groceries"
+                placeholder="Ej. Comida"
                 className="col-span-3"
                 required
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="date" className="text-right">
-                Date
+                Fecha
               </Label>
               <DatePicker date={date} setDate={setDate} className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
-                Description
+                Descripción
               </Label>
               <Input
                 id="description"
-                placeholder="Optional details"
+                placeholder="Detalles opcionales"
                 className="col-span-3"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Save Transaction</Button>
+            <Button type="submit">Guardar Transacción</Button>
           </DialogFooter>
         </form>
       </DialogContent>

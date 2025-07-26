@@ -35,9 +35,9 @@ export function ExpenseChart({ transactions }: ExpenseChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Expense Overview</CardTitle>
+        <CardTitle>Resumen de Gastos</CardTitle>
         <CardDescription>
-          A breakdown of your expenses by category for this month.
+          Un desglose de tus gastos por categoría para este mes.
         </CardDescription>
       </CardHeader>
       <CardContent>

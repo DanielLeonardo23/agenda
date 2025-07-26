@@ -28,13 +28,13 @@ export function AiSuggestions({ data }: { data: FinancialData }) {
         setCorrections(result.corrections || []);
         setSavings(result.savingsSuggestions || []);
         toast({
-          title: "Analysis Complete",
-          description: "We've analyzed your finances and have some suggestions.",
+          title: "Análisis Completo",
+          description: "Hemos analizado tus finanzas y tenemos algunas sugerencias.",
         });
       } else {
         toast({
           variant: "destructive",
-          title: "Analysis Failed",
+          title: "Análisis Fallido",
           description: result.error,
         });
       }
@@ -44,9 +44,9 @@ export function AiSuggestions({ data }: { data: FinancialData }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Financial Health AI</CardTitle>
+        <CardTitle>IA de Salud Financiera</CardTitle>
         <CardDescription>
-          Get AI-powered insights and suggestions for your finances.
+          Obtén información y sugerencias sobre tus finanzas impulsadas por IA.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -54,17 +54,17 @@ export function AiSuggestions({ data }: { data: FinancialData }) {
           {isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
+              Analizando...
             </>
           ) : (
-            "Analyze My Finances"
+            "Analizar Mis Finanzas"
           )}
         </Button>
 
         {corrections.length > 0 && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Potential Issues Found</AlertTitle>
+            <AlertTitle>Posibles Problemas Encontrados</AlertTitle>
             <AlertDescription>
                 <ul className="list-disc list-inside mt-2 space-y-1">
                     {corrections.map((c, i) => <li key={i}>{c.suggestion}</li>)}
@@ -76,7 +76,7 @@ export function AiSuggestions({ data }: { data: FinancialData }) {
         {savings.length > 0 && (
           <Alert>
             <Lightbulb className="h-4 w-4" />
-            <AlertTitle>Personalized Savings Tips</AlertTitle>
+            <AlertTitle>Consejos de Ahorro Personalizados</AlertTitle>
             <AlertDescription>
                  <ul className="list-disc list-inside mt-2 space-y-1">
                     {savings.map((s, i) => <li key={i}>{s.suggestion}</li>)}

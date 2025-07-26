@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
 export const metadata: Metadata = {
-  title: "FinTrack Daily",
-  description: "Track your finances daily with AI-powered insights.",
+  title: "FinTrack Diario",
+  description: "Monitorea tus finanzas diariamente con información impulsada por IA.",
 };
 
 export default function RootLayout({
@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="es" className="h-full">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

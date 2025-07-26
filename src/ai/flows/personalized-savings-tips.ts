@@ -12,16 +12,16 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const PersonalizedSavingsTipsInputSchema = z.object({
-  income: z.number().describe('The user monthly income in PEN.'),
-  expenses: z.record(z.string(), z.number()).describe('A record of the user expenses, grouped by category in PEN.'),
-  financialGoals: z.string().describe('The user financial goals.'),
-  currentBalance: z.number().describe('The user current balance in PEN.'),
-  upcomingPayments: z.record(z.string(), z.number()).describe('A record of the user upcoming payments, grouped by category in PEN.'),
+  income: z.number().describe('El ingreso mensual del usuario en PEN.'),
+  expenses: z.record(z.string(), z.number()).describe('Un registro de los gastos del usuario, agrupados por categoría en PEN.'),
+  financialGoals: z.string().describe('Los objetivos financieros del usuario.'),
+  currentBalance: z.number().describe('El saldo actual del usuario en PEN.'),
+  upcomingPayments: z.record(z.string(), z.number()).describe('Un registro de los próximos pagos del usuario, agrupados por categoría in PEN.'),
 });
 export type PersonalizedSavingsTipsInput = z.infer<typeof PersonalizedSavingsTipsInputSchema>;
 
 const PersonalizedSavingsTipsOutputSchema = z.object({
-  savingsTips: z.array(z.string()).describe('A list of personalized savings tips for the user.'),
+  savingsTips: z.array(z.string()).describe('Una lista de consejos de ahorro personalizados para el usuario.'),
 });
 export type PersonalizedSavingsTipsOutput = z.infer<typeof PersonalizedSavingsTipsOutputSchema>;
 
@@ -35,21 +35,21 @@ const prompt = ai.definePrompt({
   name: 'personalizedSavingsTipsPrompt',
   input: {schema: PersonalizedSavingsTipsInputSchema},
   output: {schema: PersonalizedSavingsTipsOutputSchema},
-  prompt: `You are a personal finance advisor. Analyze the user's financial situation and provide personalized, actionable savings tips tailored to their specific situation. The currency is in Peruvian Soles (PEN).
+  prompt: `Eres un asesor financiero personal. Analiza la situación financiera del usuario y proporciona consejos de ahorro personalizados y procesables adaptados a su situación específica. La moneda está en Soles Peruanos (PEN).
 
-  Consider the user's income, expenses, financial goals, current balance and upcoming payments.
+  Considera los ingresos, gastos, metas financieras, saldo actual y próximos pagos del usuario.
 
-  Income: S/{{income}}
-  Expenses: {{#each expenses}}{{@key}}: S/{{this}}
+  Ingresos: S/{{income}}
+  Gastos: {{#each expenses}}{{@key}}: S/{{this}}
   {{/each}}
-  Financial Goals: {{financialGoals}}
-  Current Balance: S/{{currentBalance}}
-  Upcoming Payments: {{#each upcomingPayments}}{{@key}}: S/{{this}}
+  Metas Financieras: {{financialGoals}}
+  Saldo Actual: S/{{currentBalance}}
+  Próximos Pagos: {{#each upcomingPayments}}{{@key}}: S/{{this}}
   {{/each}}
 
-  Provide at least 3 savings tips.
-  Format the response as a list of strings.
-  Do not include any introductory or concluding sentences.
+  Proporciona al menos 3 consejos de ahorro.
+  Formatea la respuesta como una lista de strings.
+  No incluyas ninguna oración introductoria o final.
   `,
 });
 

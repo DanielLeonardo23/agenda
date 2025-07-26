@@ -56,8 +56,8 @@ export function TransactionsCalendar({ transactions }: { transactions: Transacti
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Transactions Calendar</CardTitle>
-        <CardDescription>Visualize your daily financial flow.</CardDescription>
+        <CardTitle>Calendario de Transacciones</CardTitle>
+        <CardDescription>Visualiza tu flujo financiero diario.</CardDescription>
       </CardHeader>
       <CardContent className="flex justify-center">
         <Calendar

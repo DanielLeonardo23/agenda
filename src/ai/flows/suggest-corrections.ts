@@ -12,14 +12,14 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SuggestFinancialCorrectionsInputSchema = z.object({
-  financialEntries: z.string().describe('A JSON string of the user financial entries.'),
-  sectionLimits: z.string().describe('A JSON string of the section limits.'),
+  financialEntries: z.string().describe('Una cadena JSON de los registros financieros del usuario.'),
+  sectionLimits: z.string().describe('Una cadena JSON de los límites de la sección.'),
 });
 export type SuggestFinancialCorrectionsInput = z.infer<typeof SuggestFinancialCorrectionsInputSchema>;
 
 const SuggestFinancialCorrectionsOutputSchema = z.object({
-  corrections: z.string().describe('A JSON string of suggested corrections and highlighted inaccuracies.'),
-  savingsSuggestions: z.string().describe('A JSON string of personalized savings suggestions.'),
+  corrections: z.string().describe('Una cadena JSON de correcciones sugeridas e imprecisiones destacadas.'),
+  savingsSuggestions: z.string().describe('Una cadena JSON de sugerencias de ahorro personalizadas.'),
 });
 export type SuggestFinancialCorrectionsOutput = z.infer<typeof SuggestFinancialCorrectionsOutputSchema>;
 
@@ -33,14 +33,14 @@ const prompt = ai.definePrompt({
   name: 'suggestFinancialCorrectionsPrompt',
   input: {schema: SuggestFinancialCorrectionsInputSchema},
   output: {schema: SuggestFinancialCorrectionsOutputSchema},
-  prompt: `You are a financial advisor that is going to help the user by analyzing their financial entries and suggesting corrections or highlighting potential inaccuracies, such as unusually high expenses or discrepancies in income.
+  prompt: `Usted es un asesor financiero que ayudará al usuario analizando sus asientos financieros y sugiriendo correcciones o destacando posibles imprecisiones, como gastos inusualmente altos o discrepancias en los ingresos.
 
-You will also provide personalized savings suggestions to the user.
+También proporcionará sugerencias de ahorro personalizadas al usuario.
 
-Financial Entries: {{{financialEntries}}}
-Section Limits: {{{sectionLimits}}}
+Asientos financieros: {{{financialEntries}}}
+Límites de sección: {{{sectionLimits}}}
 
-Provide the output as JSON string for corrections and savings suggestions.`,
+Proporcione el resultado como una cadena JSON para las correcciones y sugerencias de ahorro.`,
 });
 
 const suggestFinancialCorrectionsFlow = ai.defineFlow(

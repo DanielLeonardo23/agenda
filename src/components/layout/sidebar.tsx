@@ -21,10 +21,10 @@ import {
 } from "@/components/ui/sidebar";
 
 const menuItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "#", label: "Transactions", icon: ArrowRightLeft },
-  { href: "#", label: "Budgets", icon: PiggyBank },
-  { href: "#", label: "Settings", icon: Settings },
+  { href: "/", label: "Panel", icon: LayoutDashboard },
+  { href: "#", label: "Transacciones", icon: ArrowRightLeft },
+  { href: "#", label: "Presupuestos", icon: PiggyBank },
+  { href: "#", label: "Configuración", icon: Settings },
 ];
 
 export function AppSidebar() {
