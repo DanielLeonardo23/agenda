@@ -16,20 +16,28 @@ import { Button } from "../ui/button";
 export function Dashboard() {
   const [financialData, setFinancialData] = useState<FinancialData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    // listenToFinancialData ahora devuelve una función de limpieza.
-    const unsubscribe = listenToFinancialData((data) => {
-      setFinancialData(data);
-      setLoading(false);
-    });
+    try {
+      // listenToFinancialData ahora devuelve una función de limpieza.
+      const unsubscribe = listenToFinancialData((data) => {
+        setFinancialData(data);
+        setLoading(false);
+        setError(null);
+      });
 
-    // Se llama a la función de limpieza cuando el componente se desmonta.
-    return () => unsubscribe();
+      // Se llama a la función de limpieza cuando el componente se desmonta.
+      return () => unsubscribe();
+    } catch (err) {
+        console.error("Error al suscribirse a los datos financieros:", err);
+        setError("No se pudieron cargar los datos. Por favor, revisa la conexión y la configuración.");
+        setLoading(false);
+    }
   }, []);
 
-  if (loading || !financialData) {
+  if (loading) {
     return (
       <div className="grid gap-6 md:gap-8 grid-cols-1 xl:grid-cols-3">
         <div className="xl:col-span-2 grid gap-6 md:gap-8">
@@ -48,6 +56,18 @@ export function Dashboard() {
         </div>
       </div>
     );
+  }
+
+  if (error) {
+      return (
+          <div className="text-center text-red-500 bg-red-100 p-4 rounded-md">
+              <p><strong>Error:</strong> {error}</p>
+          </div>
+      )
+  }
+
+  if (!financialData) {
+      return <div className="text-center">No se encontraron datos.</div>
   }
 
   return (

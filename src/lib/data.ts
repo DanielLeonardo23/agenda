@@ -1,4 +1,4 @@
-import { getDatabase, ref, push, set, get, update, onValue, off } from 'firebase/database';
+import { getDatabase, ref, push, set, update, onValue, off } from 'firebase/database';
 import type { FinancialData, Transaction, AddTransactionData, RecurringPayment, Budget, AddRecurringPaymentData } from './types';
 import { firebaseApp } from './firebase';
 
@@ -9,7 +9,8 @@ export function listenToFinancialData(callback: (data: FinancialData) => void) {
 
   const listener = onValue(rootRef, (snapshot) => {
     const dbData = snapshot.val() || {};
-    
+    console.log("Datos recibidos de Firebase:", dbData); // Para depuración
+
     const transactions: Transaction[] = [];
     if (dbData.transactions) {
       const data = dbData.transactions;
@@ -44,16 +45,18 @@ export function listenToFinancialData(callback: (data: FinancialData) => void) {
     
     const currentBalance = initialBalance + totalIncome - totalExpenses;
 
-    // Mock data for budgets as it's not implemented yet
     const budgets: Budget[] = [];
 
-    callback({
+    const financialData: FinancialData = {
       transactions,
       recurringPayments,
       budgets,
       currentBalance,
       initialBalance,
-    });
+    };
+    
+    console.log("Datos procesados para la UI:", financialData); // Para depuración
+    callback(financialData);
   });
 
   // Devuelve una función para cancelar la suscripción y limpiar el listener
