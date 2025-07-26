@@ -51,28 +51,36 @@ export function AddTransactionDialog({ children }: { children: React.ReactNode }
         return;
     }
 
-    const result = await addTransactionAction({
-      type,
-      amount: parseFloat(amount),
-      category,
-      date,
-      description,
-    });
+    try {
+      const result = await addTransactionAction({
+        type,
+        amount: parseFloat(amount),
+        category,
+        date,
+        description,
+      });
 
-    setIsPending(false);
-
-    if (result.success) {
-        toast({
-            title: "Transacción Agregada",
-            description: "Tu nueva transacción ha sido registrada exitosamente.",
-        });
-        setOpen(false);
-    } else {
+      if (result.success) {
+          toast({
+              title: "Transacción Agregada",
+              description: "Tu nueva transacción ha sido registrada exitosamente.",
+          });
+          setOpen(false);
+      } else {
+          toast({
+              variant: "destructive",
+              title: "Error al Guardar",
+              description: result.error,
+          });
+      }
+    } catch (error) {
         toast({
             variant: "destructive",
-            title: "Error al Guardar",
-            description: result.error,
+            title: "Error Inesperado",
+            description: "Ocurrió un error al guardar la transacción.",
         });
+    } finally {
+        setIsPending(false);
     }
   };
 
