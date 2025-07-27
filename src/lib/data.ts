@@ -9,7 +9,7 @@ export function listenToFinancialData(callback: (data: FinancialData) => void) {
 
   const listener = onValue(rootRef, (snapshot) => {
     const dbData = snapshot.val() || {};
-    console.log("Datos recibidos de Firebase:", dbData); // Para depuración
+    console.log("Datos recibidos de Firebase:", dbData);
 
     const transactions: Transaction[] = [];
     if (dbData.transactions) {
@@ -55,11 +55,10 @@ export function listenToFinancialData(callback: (data: FinancialData) => void) {
       initialBalance,
     };
     
-    console.log("Datos procesados para la UI:", financialData); // Para depuración
+    console.log("Datos procesados para la UI:", financialData);
     callback(financialData);
   });
 
-  // Devuelve una función para cancelar la suscripción y limpiar el listener
   return () => off(rootRef, 'value', listener);
 }
 
