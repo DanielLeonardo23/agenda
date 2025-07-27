@@ -9,6 +9,7 @@ import {
   PiggyBank,
   Settings,
   ArrowRightLeft,
+  Clock,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ import {
 const menuItems = [
   { href: "/", label: "Panel", icon: LayoutDashboard },
   { href: "/transactions", label: "Transacciones", icon: ArrowRightLeft },
+  { href: "/scheduled-payments", label: "Pagos Programados", icon: Clock },
   { href: "/budgets", label: "Presupuestos", icon: PiggyBank },
   { href: "/settings", label: "Configuración", icon: Settings },
 ];

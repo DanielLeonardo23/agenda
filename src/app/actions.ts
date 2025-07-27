@@ -3,12 +3,27 @@
 
 import { revalidatePath } from 'next/cache';
 import { suggestFinancialCorrections } from '@/ai/flows/suggest-corrections';
-import { addTransaction, setInitialBalance as setInitialBalanceDb, addRecurringPayment as addRecurringPaymentDb } from '@/lib/data';
-import type { FinancialData, Correction, SavingsSuggestion, AddTransactionData, AddRecurringPaymentData } from '@/lib/types';
+import { 
+  addTransaction as addTransactionDb, 
+  addRecurringPayment as addRecurringPaymentDb,
+  deleteTransaction as deleteTransactionDb,
+  addDailyBudget as addDailyBudgetDb,
+  deleteDailyBudget as deleteDailyBudgetDb,
+  addAccount as addAccountDb,
+  deleteAccount as deleteAccountDb,
+  updateAccountBalance as updateAccountBalanceDb,
+  updateTransaction as updateTransactionDb,
+  executeRecurringPayments as executeRecurringPaymentsDb,
+  executeDailyBudgets as executeDailyBudgetsDb,
+  deleteRecurringPayment as deleteRecurringPaymentDb,
+  updateRecurringPayment as updateRecurringPaymentDb,
+  updateDailyBudget as updateDailyBudgetDb
+} from "@/lib/data";
+import type { FinancialData, Correction, SavingsSuggestion, AddTransactionData, AddRecurringPaymentData, AddDailyBudgetData, AddAccountData } from '@/lib/types';
 
 
 export async function addTransactionAction(data: AddTransactionData) {
-  const result = await addTransaction(data);
+  const result = await addTransactionDb(data);
   if (result.success) {
     revalidatePath('/');
   }
@@ -27,6 +42,135 @@ export async function addRecurringPaymentAction(data: AddRecurringPaymentData) {
   const result = await addRecurringPaymentDb(data);
   if (result.success) {
     revalidatePath('/');
+  }
+  return result;
+}
+
+export async function deleteTransactionAction(transactionId: string) {
+  const result = await deleteTransactionDb(transactionId);
+  if (result.success) {
+    revalidatePath('/');
+    revalidatePath('/transactions');
+  }
+  return result;
+}
+
+export async function addDailyBudgetAction(data: AddDailyBudgetData) {
+  const result = await addDailyBudgetDb(data);
+  if (result.success) {
+    revalidatePath('/');
+    revalidatePath('/budgets');
+  }
+  return result;
+}
+
+export async function deleteDailyBudgetAction(budgetId: string) {
+  const result = await deleteDailyBudgetDb(budgetId);
+  if (result.success) {
+    revalidatePath('/');
+    revalidatePath('/budgets');
+  }
+  return result;
+}
+
+export async function addAccountAction(data: AddAccountData) {
+  const result = await addAccountDb(data);
+  if (result.success) {
+    revalidatePath('/');
+    revalidatePath('/settings');
+  }
+  return result;
+}
+
+export async function deleteAccountAction(accountId: string) {
+  const result = await deleteAccountDb(accountId);
+  if (result.success) {
+    revalidatePath('/');
+    revalidatePath('/settings');
+  }
+  return result;
+}
+
+export async function updateAccountBalanceAction(accountId: string, newBalance: number) {
+  const result = await updateAccountBalanceDb(accountId, newBalance);
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
+
+export async function updateTransactionAction(data: {
+  id: string;
+  type: 'income' | 'expense';
+  amount: number;
+  category: string;
+  date: Date;
+  description?: string;
+  accountId?: string;
+}) {
+  const result = await updateTransactionDb(data);
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
+
+export async function executeRecurringPaymentsAction() {
+  const result = await executeRecurringPaymentsDb();
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
+
+export async function executeDailyBudgetsAction() {
+  const result = await executeDailyBudgetsDb();
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
+
+export async function deleteRecurringPaymentAction(paymentId: string) {
+  const result = await deleteRecurringPaymentDb(paymentId);
+  if (result.success) {
+    revalidatePath('/');
+    revalidatePath('/scheduled-payments');
+  }
+  return result;
+}
+
+export async function updateRecurringPaymentAction(data: {
+  id: string;
+  name: string;
+  amount: number;
+  category: string;
+  dayOfMonth: number;
+  description?: string;
+}) {
+  const result = await updateRecurringPaymentDb(data);
+  if (result.success) {
+    revalidatePath('/');
+    revalidatePath('/scheduled-payments');
+  }
+  return result;
+}
+
+export async function updateDailyBudgetAction(data: {
+  id: string;
+  name: string;
+  category: string;
+  limit: number;
+  daysOfWeek: number[];
+  description?: string;
+  items: any[];
+  autoCreate: boolean;
+  accountId?: string;
+}) {
+  const result = await updateDailyBudgetDb(data);
+  if (result.success) {
+    revalidatePath('/');
+    revalidatePath('/scheduled-payments');
   }
   return result;
 }

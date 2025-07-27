@@ -2,17 +2,18 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { AutoPaymentExecutor } from "@/components/dashboard/auto-payment-executor";
 
 export const metadata: Metadata = {
-  title: "FinTrack Diario",
-  description: "Monitorea tus finanzas diariamente con información impulsada por IA.",
+  title: "Panel - Control Financiero",
+  description: "Aplicación para el control de finanzas personales",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="es" className="h-full">
       <head>
@@ -32,6 +33,7 @@ export default function RootLayout({
           {children}
         </SidebarProvider>
         <Toaster />
+        <AutoPaymentExecutor />
       </body>
     </html>
   );
