@@ -46,6 +46,15 @@ export function listenToFinancialData(callback: (data: FinancialData) => void) {
     const currentBalance = initialBalance + totalIncome - totalExpenses;
 
     const budgets: Budget[] = [];
+    if (dbData.budgets) {
+        const data = dbData.budgets;
+        for (const key in data) {
+            budgets.push({
+                id: key,
+                ...data[key]
+            });
+        }
+    }
 
     const financialData: FinancialData = {
       transactions,

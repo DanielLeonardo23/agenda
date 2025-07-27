@@ -67,7 +67,7 @@ export function Dashboard() {
   }
 
   if (!financialData) {
-      return <div className="text-center">No se encontraron datos.</div>
+      return <div className="text-center">No se encontraron datos. Comienza agregando una transacción.</div>
   }
 
   return (
@@ -95,4 +95,3 @@ export function Dashboard() {
     </>
   );
 }
-
