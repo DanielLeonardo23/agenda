@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { addRecurringPaymentAction, updateRecurringPaymentAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import type { RecurringPayment } from "@/lib/types";
@@ -28,12 +29,24 @@ const PAYMENT_CATEGORIES = [
   "Otros"
 ];
 
+const DAYS_OF_WEEK = [
+  { value: 0, label: "Domingo" },
+  { value: 1, label: "Lunes" },
+  { value: 2, label: "Martes" },
+  { value: 3, label: "Miércoles" },
+  { value: 4, label: "Jueves" },
+  { value: 5, label: "Viernes" },
+  { value: 6, label: "Sábado" },
+];
+
 export function RecurringPaymentForm({ open, onOpenChange, editingPayment }: RecurringPaymentFormProps) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [dayOfMonth, setDayOfMonth] = useState("");
+  const [daysOfWeek, setDaysOfWeek] = useState<number[]>([]);
   const [description, setDescription] = useState("");
+  const [requiresApproval, setRequiresApproval] = useState(true);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -43,15 +56,27 @@ export function RecurringPaymentForm({ open, onOpenChange, editingPayment }: Rec
       setAmount(editingPayment.amount.toString());
       setCategory(editingPayment.category);
       setDayOfMonth(editingPayment.dayOfMonth.toString());
+      setDaysOfWeek(editingPayment.daysOfWeek || []);
       setDescription(editingPayment.description || "");
+      setRequiresApproval(editingPayment.requiresApproval !== false);
     } else {
       setName("");
       setAmount("");
       setCategory("");
       setDayOfMonth("");
+      setDaysOfWeek([]);
       setDescription("");
+      setRequiresApproval(true);
     }
   }, [editingPayment, open]);
+
+  const handleDayOfWeekChange = (dayValue: number, checked: boolean) => {
+    if (checked) {
+      setDaysOfWeek(prev => [...prev, dayValue]);
+    } else {
+      setDaysOfWeek(prev => prev.filter(day => day !== dayValue));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +107,9 @@ export function RecurringPaymentForm({ open, onOpenChange, editingPayment }: Rec
         amount: parseFloat(amount),
         category,
         dayOfMonth: day,
+        daysOfWeek: daysOfWeek.length > 0 ? daysOfWeek : undefined,
         description: description || undefined,
+        requiresApproval,
       };
 
       let result;
@@ -123,7 +150,7 @@ export function RecurringPaymentForm({ open, onOpenChange, editingPayment }: Rec
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {editingPayment ? "Editar Pago Recurrente" : "Agregar Pago Recurrente"}
@@ -185,6 +212,43 @@ export function RecurringPaymentForm({ open, onOpenChange, editingPayment }: Rec
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Días de la Semana (opcional)</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {DAYS_OF_WEEK.map((day) => (
+                <div key={day.value} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`day-${day.value}`}
+                    checked={daysOfWeek.includes(day.value)}
+                    onCheckedChange={(checked) => handleDayOfWeekChange(day.value, checked as boolean)}
+                  />
+                  <Label htmlFor={`day-${day.value}`} className="text-sm">
+                    {day.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Si seleccionas días de la semana, el pago solo se ejecutará en esos días cuando coincida con el día del mes.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="requiresApproval"
+                checked={requiresApproval}
+                onCheckedChange={(checked) => setRequiresApproval(checked as boolean)}
+              />
+              <Label htmlFor="requiresApproval" className="text-sm">
+                Requerir aprobación antes de ejecutar
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Si está marcado, el pago aparecerá como pendiente de aprobación antes de ejecutarse.
+            </p>
           </div>
 
           <div className="space-y-2">

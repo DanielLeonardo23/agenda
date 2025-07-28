@@ -8,6 +8,7 @@ import { OverviewCards } from "@/components/dashboard/overview-cards";
 import { ExpenseChart } from "@/components/dashboard/expense-chart";
 import { TransactionsCalendar } from "@/components/dashboard/transactions-calendar";
 import { UpcomingPayments } from "@/components/dashboard/upcoming-payments";
+import { PendingPayments } from "@/components/dashboard/pending-payments";
 import { BalanceCalculator } from "@/components/dashboard/balance-calculator";
 import { AiSuggestions } from "@/components/dashboard/ai-suggestions";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -90,6 +91,9 @@ export function Dashboard() {
           Regresar
         </Button>
       </div>
+
+      {/* Pagos Pendientes de Aprobación - Sección prominente */}
+      <PendingPayments pendingPayments={financialData.pendingAutomaticPayments} />
 
       {financialData.initialBalance === 0 && financialData.transactions.length === 0 && (
         <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md">

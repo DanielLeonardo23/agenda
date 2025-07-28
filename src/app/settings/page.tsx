@@ -73,7 +73,7 @@ export default function SettingsPage() {
                       Cuentas configuradas: {financialData.accounts.length}
                     </p>
                     <Button asChild className="w-full">
-                      <Link href="/scheduled-payments">
+                      <Link href="/accounts">
                         <PlusCircle className="h-4 w-4 mr-2" />
                         Gestionar Cuentas
                       </Link>

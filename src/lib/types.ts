@@ -30,7 +30,23 @@ export interface RecurringPayment {
   amount: number;
   category: string;
   dayOfMonth: number;
+  daysOfWeek?: number[]; // 0=domingo, 1=lunes, ..., 6=sábado
   description?: string;
+  requiresApproval?: boolean; // Si requiere aprobación antes de ejecutarse
+}
+
+export interface PendingAutomaticPayment {
+  id: string;
+  type: 'recurring' | 'daily-budget';
+  name: string;
+  amount: number;
+  category: string;
+  description: string;
+  scheduledDate: string; // ISO string
+  accountId: string;
+  sourceId: string; // ID del pago recurrente o presupuesto diario
+  createdAt: string; // ISO string
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 export type Budget = {
@@ -66,6 +82,7 @@ export type FinancialData = {
   budgets: Budget[];
   dailyBudgets: DailyBudget[];
   accounts: Account[];
+  pendingAutomaticPayments: PendingAutomaticPayment[];
   currentBalance: number; // in PEN
   initialBalance: number; // in PEN
   accountTotals: AccountTotal[];
@@ -96,7 +113,10 @@ export interface AddRecurringPaymentData {
   name: string;
   amount: number;
   dayOfMonth: number;
+  daysOfWeek?: number[];
   category: string;
+  description?: string;
+  requiresApproval?: boolean;
 }
 
 export interface AddDailyBudgetData {

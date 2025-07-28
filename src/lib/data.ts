@@ -1,5 +1,5 @@
 import { getDatabase, ref, push, set, update, onValue, off, remove, get } from 'firebase/database';
-import type { FinancialData, Transaction, AddTransactionData, RecurringPayment, Budget, AddRecurringPaymentData, DailyBudget, AddDailyBudgetData, Account, AddAccountData } from './types';
+import type { FinancialData, Transaction, AddTransactionData, RecurringPayment, Budget, AddRecurringPaymentData, DailyBudget, AddDailyBudgetData, Account, AddAccountData, PendingAutomaticPayment } from './types';
 import { firebaseApp } from './firebase';
 
 const db = getDatabase(firebaseApp);
@@ -83,6 +83,17 @@ export function listenToFinancialData(callback: (data: FinancialData) => void) {
         }
     }
 
+    const pendingAutomaticPayments: PendingAutomaticPayment[] = [];
+    if (dbData.pendingAutomaticPayments) {
+        const data = dbData.pendingAutomaticPayments;
+        for (const key in data) {
+            pendingAutomaticPayments.push({
+                id: key,
+                ...data[key]
+            });
+        }
+    }
+
     // Calcular el saldo actual basado en la suma de los saldos de las cuentas
     const totalAccountBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
     const currentBalance = totalAccountBalance;
@@ -111,6 +122,7 @@ export function listenToFinancialData(callback: (data: FinancialData) => void) {
       budgets,
       dailyBudgets,
       accounts,
+      pendingAutomaticPayments,
       currentBalance,
       initialBalance,
       accountTotals,
@@ -128,10 +140,31 @@ export async function addTransaction(transactionData: AddTransactionData) {
     try {
         const transactionsRef = ref(db, 'transactions');
         const newTransactionRef = push(transactionsRef);
+        
+        // Validar que el amount sea un número válido
+        const amount = Number(transactionData.amount);
+        if (isNaN(amount) || amount <= 0) {
+            console.error("Amount inválido en transacción:", transactionData.amount);
+            return { success: false, error: "Monto inválido" };
+        }
+        
+        // Validar que la fecha sea válida antes de convertir a ISO string
+        let dateToSave: string;
+        try {
+            if (isNaN(transactionData.date.getTime())) {
+                throw new Error("Fecha inválida");
+            }
+            dateToSave = transactionData.date.toISOString();
+        } catch (error) {
+            console.error("Error al procesar fecha de transacción:", error);
+            // Usar la fecha actual como fallback
+            dateToSave = new Date().toISOString();
+        }
+        
         await set(newTransactionRef, {
             ...transactionData,
-            amount: Number(transactionData.amount),
-            date: transactionData.date.toISOString(),
+            amount: amount, // Usar el amount validado
+            date: dateToSave,
         });
         console.log("Documento escrito con ID: ", newTransactionRef.key);
 
@@ -145,9 +178,9 @@ export async function addTransaction(transactionData: AddTransactionData) {
                 let newBalance = currentBalance;
                 
                 if (transactionData.type === 'income') {
-                    newBalance += transactionData.amount;
+                    newBalance += amount; // Usar el amount validado
                 } else if (transactionData.type === 'expense') {
-                    newBalance -= transactionData.amount;
+                    newBalance -= amount; // Usar el amount validado
                 }
                 
                 await update(accountRef, {
@@ -270,6 +303,8 @@ export async function addRecurringPayment(paymentData: AddRecurringPaymentData) 
       ...paymentData,
       amount: Number(paymentData.amount),
       dayOfMonth: Number(paymentData.dayOfMonth),
+      daysOfWeek: paymentData.daysOfWeek || null,
+      requiresApproval: paymentData.requiresApproval !== false,
     });
     return { success: true, id: newPaymentRef.key };
   } catch(e) {
@@ -396,8 +431,8 @@ export async function updateAccountBalance(accountId: string, newBalance: number
     }
 }
 
-// Función para ejecutar pagos recurrentes automáticamente
-export async function executeRecurringPayments() {
+// Función para detectar pagos recurrentes pendientes (en lugar de ejecutarlos)
+export async function detectPendingRecurringPayments() {
     try {
         const rootRef = ref(db);
         const snapshot = await get(rootRef);
@@ -434,11 +469,20 @@ export async function executeRecurringPayments() {
 
         const today = new Date();
         const currentDay = today.getDate();
+        const currentDayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, etc.
         
+        let pendingPayments = 0;
         let executedPayments = 0;
         
         for (const payment of recurringPayments) {
-            if (payment.dayOfMonth === currentDay) {
+            // Verificar si debe ejecutarse hoy
+            const shouldExecute = 
+                // Verificar día del mes (si está configurado)
+                (payment.dayOfMonth === currentDay) &&
+                // Verificar días de la semana (si está configurado)
+                (!payment.daysOfWeek || payment.daysOfWeek.includes(currentDayOfWeek));
+            
+            if (shouldExecute) {
                 // Verificar si ya se ejecutó hoy
                 const todayStr = today.toISOString().split('T')[0];
                 const existingTransactions = await get(ref(db, 'transactions'));
@@ -447,38 +491,76 @@ export async function executeRecurringPayments() {
                 const alreadyExecuted = Object.values(transactions).some((t: any) => 
                     t.category === payment.category && 
                     t.amount === payment.amount &&
-                    t.date && t.date.startsWith(todayStr)
+                    t.date && t.date.startsWith(todayStr) &&
+                    t.description && t.description.includes(`Pago automático: ${payment.name}`)
                 );
                 
                 if (!alreadyExecuted) {
-                    // Crear transacción automática
-                    const transactionData: AddTransactionData = {
-                        type: 'expense',
-                        amount: payment.amount,
-                        category: payment.category,
-                        date: today,
-                        description: `Pago automático: ${payment.name}`,
-                        accountId: bcpAccount.id
-                    };
-                    
-                    const result = await addTransaction(transactionData);
-                    if (result.success) {
-                        executedPayments++;
-                        console.log(`Pago recurrente ejecutado: ${payment.name} - S/ ${payment.amount}`);
+                    // Si requiere aprobación, crear pago pendiente
+                    if (payment.requiresApproval !== false) {
+                        // Verificar si ya existe un pago pendiente para hoy
+                        const existingPendingPayments = await get(ref(db, 'pendingAutomaticPayments'));
+                        const pendingPaymentsData = existingPendingPayments.val() || {};
+                        
+                        const alreadyPending = Object.values(pendingPaymentsData).some((p: any) => 
+                            p.sourceId === payment.id && 
+                            p.scheduledDate && p.scheduledDate.startsWith(todayStr) &&
+                            p.status === 'pending'
+                        );
+                        
+                        if (!alreadyPending) {
+                            // Crear pago pendiente
+                            const pendingPaymentData: PendingAutomaticPayment = {
+                                id: '', // Se generará automáticamente
+                                type: 'recurring',
+                                name: payment.name,
+                                amount: payment.amount,
+                                category: payment.category,
+                                description: `Pago automático: ${payment.name}`,
+                                scheduledDate: today.toISOString(),
+                                accountId: bcpAccount.id,
+                                sourceId: payment.id,
+                                createdAt: new Date().toISOString(),
+                                status: 'pending'
+                            };
+                            
+                            const pendingPaymentsRef = ref(db, 'pendingAutomaticPayments');
+                            const newPendingPaymentRef = push(pendingPaymentsRef);
+                            await set(newPendingPaymentRef, pendingPaymentData);
+                            
+                            pendingPayments++;
+                            console.log(`Pago recurrente pendiente creado: ${payment.name} - S/ ${payment.amount}`);
+                        }
+                    } else {
+                        // Si no requiere aprobación, ejecutar directamente
+                        const transactionData: AddTransactionData = {
+                            type: 'expense',
+                            amount: payment.amount,
+                            category: payment.category,
+                            date: today,
+                            description: `Pago automático: ${payment.name}`,
+                            accountId: bcpAccount.id
+                        };
+                        
+                        const result = await addTransaction(transactionData);
+                        if (result.success) {
+                            executedPayments++;
+                            console.log(`Pago recurrente ejecutado automáticamente: ${payment.name} - S/ ${payment.amount}`);
+                        }
                     }
                 }
             }
         }
         
-        return { success: true, executedPayments };
+        return { success: true, pendingPayments, executedPayments };
     } catch (e) {
-        console.error("Error al ejecutar pagos recurrentes: ", e);
+        console.error("Error al detectar pagos recurrentes pendientes: ", e);
         return { success: false, error: e instanceof Error ? e.message : 'Error desconocido' };
     }
 }
 
-// Función para ejecutar presupuestos diarios automáticamente
-export async function executeDailyBudgets() {
+// Función para detectar presupuestos diarios pendientes (en lugar de ejecutarlos)
+export async function detectPendingDailyBudgets() {
     try {
         const rootRef = ref(db);
         const snapshot = await get(rootRef);
@@ -519,12 +601,22 @@ export async function executeDailyBudgets() {
 
         const today = new Date();
         const currentDayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, etc.
-        const todayStr = today.toISOString().split('T')[0];
         
-        let executedBudgets = 0;
+        let pendingBudgets = 0;
         
         for (const budget of dailyBudgets) {
             if (budget.autoCreate && budget.daysOfWeek.includes(currentDayOfWeek)) {
+                // Verificar si ya existe un presupuesto pendiente para hoy
+                const todayStr = today.toISOString().split('T')[0];
+                const existingPendingPayments = await get(ref(db, 'pendingAutomaticPayments'));
+                const pendingPaymentsData = existingPendingPayments.val() || {};
+                
+                const alreadyPending = Object.values(pendingPaymentsData).some((p: any) => 
+                    p.sourceId === budget.id && 
+                    p.scheduledDate && p.scheduledDate.startsWith(todayStr) &&
+                    p.status === 'pending'
+                );
+                
                 // Verificar si ya se ejecutó hoy
                 const existingTransactions = await get(ref(db, 'transactions'));
                 const transactions = existingTransactions.val() || {};
@@ -535,32 +627,201 @@ export async function executeDailyBudgets() {
                     t.description && t.description.includes(budget.name)
                 );
                 
-                if (!alreadyExecuted) {
-                    // Crear transacciones para cada item del presupuesto diario
+                if (!alreadyPending && !alreadyExecuted) {
+                    // Crear pagos pendientes para cada item del presupuesto diario
                     for (const item of budget.items) {
-                        const transactionData: AddTransactionData = {
-                            type: 'expense',
+                        const pendingPaymentData: PendingAutomaticPayment = {
+                            id: '', // Se generará automáticamente
+                            type: 'daily-budget',
+                            name: `${budget.name}: ${item.name}`,
                             amount: item.amount,
                             category: item.category,
-                            date: today,
                             description: `${budget.name}: ${item.name}`,
+                            scheduledDate: today.toISOString(),
                             accountId: bcpAccount.id,
-                            dailyBudgetId: budget.id
+                            sourceId: budget.id,
+                            createdAt: new Date().toISOString(),
+                            status: 'pending'
                         };
                         
-                        const result = await addTransaction(transactionData);
-                        if (result.success) {
-                            executedBudgets++;
-                            console.log(`Presupuesto diario ejecutado: ${budget.name} - ${item.name} - S/ ${item.amount}`);
-                        }
+                        const pendingPaymentsRef = ref(db, 'pendingAutomaticPayments');
+                        const newPendingPaymentRef = push(pendingPaymentsRef);
+                        await set(newPendingPaymentRef, pendingPaymentData);
+                        
+                        pendingBudgets++;
+                        console.log(`Presupuesto diario pendiente creado: ${budget.name} - ${item.name} - S/ ${item.amount}`);
                     }
                 }
             }
         }
         
-        return { success: true, executedBudgets };
+        return { success: true, pendingBudgets };
     } catch (e) {
-        console.error("Error al ejecutar presupuestos diarios: ", e);
+        console.error("Error al detectar presupuestos diarios pendientes: ", e);
+        return { success: false, error: e instanceof Error ? e.message : 'Error desconocido' };
+    }
+}
+
+// Función para aprobar un pago pendiente
+export async function approvePendingPayment(pendingPaymentId: string) {
+    try {
+        const pendingPaymentRef = ref(db, `pendingAutomaticPayments/${pendingPaymentId}`);
+        const pendingPaymentSnapshot = await get(pendingPaymentRef);
+        
+        if (!pendingPaymentSnapshot.exists()) {
+            return { success: false, error: "Pago pendiente no encontrado" };
+        }
+        
+        const pendingPayment = pendingPaymentSnapshot.val();
+        console.log("Datos del pago pendiente recuperados:", pendingPayment);
+        
+        // Verificar si los datos están anidados de manera extraña
+        let paymentData = pendingPayment;
+        let isNested = false;
+        
+        // Si los datos están anidados, extraerlos
+        if (pendingPayment && typeof pendingPayment === 'object') {
+            // Buscar la primera propiedad que contenga los datos del pago
+            const keys = Object.keys(pendingPayment);
+            for (const key of keys) {
+                if (key !== 'status' && typeof pendingPayment[key] === 'object') {
+                    paymentData = pendingPayment[key];
+                    isNested = true;
+                    console.log("Datos extraídos de estructura anidada:", paymentData);
+                    break;
+                }
+            }
+        }
+        
+        // Validar que el pago pendiente tenga todos los datos necesarios
+        if (!paymentData.amount || !paymentData.category || !paymentData.description) {
+            console.error("Pago pendiente con datos incompletos:", paymentData);
+            return { success: false, error: "Datos del pago pendiente incompletos" };
+        }
+        
+        // Validar que el amount sea un número válido
+        const amount = Number(paymentData.amount);
+        if (isNaN(amount) || amount <= 0) {
+            console.error("Amount inválido en pago pendiente:", paymentData.amount);
+            return { success: false, error: "Monto inválido" };
+        }
+        
+        // Actualizar estado a aprobado - manejar estructura anidada
+        if (isNested) {
+            // Si está anidado, actualizar el estado en el nivel correcto
+            await update(pendingPaymentRef, { status: 'approved' });
+        } else {
+            // Si no está anidado, actualizar directamente
+            await update(pendingPaymentRef, { status: 'approved' });
+        }
+        
+        // Crear la transacción real con validación de fecha
+        let transactionDate: Date;
+        try {
+            if (paymentData.scheduledDate) {
+                transactionDate = new Date(paymentData.scheduledDate);
+                // Verificar que la fecha sea válida
+                if (isNaN(transactionDate.getTime())) {
+                    throw new Error("Fecha inválida");
+                }
+            } else {
+                throw new Error("No hay fecha programada");
+            }
+        } catch (error) {
+            console.error("Error al parsear fecha del pago pendiente:", error);
+            // Usar la fecha actual como fallback
+            transactionDate = new Date();
+        }
+        
+        const transactionData: AddTransactionData = {
+            type: 'expense',
+            amount: amount, // Usar el amount validado
+            category: paymentData.category,
+            date: transactionDate,
+            description: paymentData.description,
+            accountId: paymentData.accountId
+        };
+        
+        const result = await addTransaction(transactionData);
+        if (result.success) {
+            console.log(`Pago aprobado y ejecutado: ${paymentData.name} - S/ ${amount}`);
+            return { success: true, transactionId: result.id };
+        } else {
+            // Revertir el estado si falla la transacción
+            if (isNested) {
+                await update(pendingPaymentRef, { status: 'pending' });
+            } else {
+                await update(pendingPaymentRef, { status: 'pending' });
+            }
+            return { success: false, error: result.error };
+        }
+    } catch (e) {
+        console.error("Error al aprobar pago pendiente: ", e);
+        return { success: false, error: e instanceof Error ? e.message : 'Error desconocido' };
+    }
+}
+
+// Función para rechazar un pago pendiente
+export async function rejectPendingPayment(pendingPaymentId: string) {
+    try {
+        const pendingPaymentRef = ref(db, `pendingAutomaticPayments/${pendingPaymentId}`);
+        const pendingPaymentSnapshot = await get(pendingPaymentRef);
+        
+        if (!pendingPaymentSnapshot.exists()) {
+            return { success: false, error: "Pago pendiente no encontrado" };
+        }
+        
+        const pendingPayment = pendingPaymentSnapshot.val();
+        
+        // Verificar si los datos están anidados
+        let isNested = false;
+        if (pendingPayment && typeof pendingPayment === 'object') {
+            const keys = Object.keys(pendingPayment);
+            for (const key of keys) {
+                if (key !== 'status' && typeof pendingPayment[key] === 'object') {
+                    isNested = true;
+                    break;
+                }
+            }
+        }
+        
+        // Actualizar estado a rechazado
+        await update(pendingPaymentRef, { status: 'rejected' });
+        
+        console.log(`Pago rechazado: ${pendingPaymentId}`);
+        return { success: true };
+    } catch (e) {
+        console.error("Error al rechazar pago pendiente: ", e);
+        return { success: false, error: e instanceof Error ? e.message : 'Error desconocido' };
+    }
+}
+
+// Función para eliminar pagos pendientes antiguos (más de 7 días)
+export async function cleanupOldPendingPayments() {
+    try {
+        const pendingPaymentsRef = ref(db, 'pendingAutomaticPayments');
+        const snapshot = await get(pendingPaymentsRef);
+        const pendingPayments = snapshot.val() || {};
+        
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        let deletedCount = 0;
+        
+        for (const [key, payment] of Object.entries(pendingPayments)) {
+            const paymentData = payment as any;
+            const createdAt = new Date(paymentData.createdAt);
+            
+            if (createdAt < sevenDaysAgo) {
+                await remove(ref(db, `pendingAutomaticPayments/${key}`));
+                deletedCount++;
+            }
+        }
+        
+        console.log(`Se eliminaron ${deletedCount} pagos pendientes antiguos`);
+        return { success: true, deletedCount };
+    } catch (e) {
+        console.error("Error al limpiar pagos pendientes antiguos: ", e);
         return { success: false, error: e instanceof Error ? e.message : 'Error desconocido' };
     }
 }
@@ -584,7 +845,9 @@ export async function updateRecurringPayment(paymentData: {
     amount: number;
     category: string;
     dayOfMonth: number;
+    daysOfWeek?: number[];
     description?: string;
+    requiresApproval?: boolean;
 }) {
     try {
         const paymentRef = ref(db, `recurringPayments/${paymentData.id}`);
@@ -593,7 +856,9 @@ export async function updateRecurringPayment(paymentData: {
             amount: paymentData.amount,
             category: paymentData.category,
             dayOfMonth: paymentData.dayOfMonth,
-            description: paymentData.description || null
+            daysOfWeek: paymentData.daysOfWeek || null,
+            description: paymentData.description || null,
+            requiresApproval: paymentData.requiresApproval
         });
         console.log(`Pago recurrente actualizado: ${paymentData.id}`);
         return { success: true };

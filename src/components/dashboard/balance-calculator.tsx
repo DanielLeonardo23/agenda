@@ -79,12 +79,20 @@ export function BalanceCalculator({ data }: BalanceCalculatorProps) {
         if (selectedMonth === currentMonth && selectedYear === currentYear) {
           // Calcular solo los días desde hoy hasta la fecha seleccionada
           for (let day = currentDay; day <= selectedDay; day++) {
-            const currentDate = new Date(selectedYear, selectedMonth, day);
-            const dayOfWeek = currentDate.getDay();
-            
-            // Si este día está en los días programados del presupuesto
-            if (budget.daysOfWeek.includes(dayOfWeek)) {
-              budgetTotal += budget.items.reduce((sum, item) => sum + item.amount, 0);
+            try {
+              const currentDate = new Date(selectedYear, selectedMonth, day);
+              // Verificar que la fecha sea válida
+              if (currentDate.getMonth() === selectedMonth && currentDate.getDate() === day) {
+                const dayOfWeek = currentDate.getDay();
+                
+                // Si este día está en los días programados del presupuesto
+                if (budget.daysOfWeek.includes(dayOfWeek)) {
+                  budgetTotal += budget.items.reduce((sum, item) => sum + item.amount, 0);
+                }
+              }
+            } catch (error) {
+              console.warn(`Fecha inválida: ${selectedYear}-${selectedMonth + 1}-${day}`);
+              continue;
             }
           }
         } else {
@@ -94,21 +102,37 @@ export function BalanceCalculator({ data }: BalanceCalculatorProps) {
           // Días del mes actual desde hoy hasta el final
           const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
           for (let day = currentDay; day <= daysInCurrentMonth; day++) {
-            const currentDate = new Date(currentYear, currentMonth, day);
-            const dayOfWeek = currentDate.getDay();
-            
-            if (budget.daysOfWeek.includes(dayOfWeek)) {
-              budgetTotal += budget.items.reduce((sum, item) => sum + item.amount, 0);
+            try {
+              const currentDate = new Date(currentYear, currentMonth, day);
+              // Verificar que la fecha sea válida
+              if (currentDate.getMonth() === currentMonth && currentDate.getDate() === day) {
+                const dayOfWeek = currentDate.getDay();
+                
+                if (budget.daysOfWeek.includes(dayOfWeek)) {
+                  budgetTotal += budget.items.reduce((sum, item) => sum + item.amount, 0);
+                }
+              }
+            } catch (error) {
+              console.warn(`Fecha inválida: ${currentYear}-${currentMonth + 1}-${day}`);
+              continue;
             }
           }
           
           // Días del mes seleccionado desde el 1 hasta la fecha
           for (let day = 1; day <= selectedDay; day++) {
-            const currentDate = new Date(selectedYear, selectedMonth, day);
-            const dayOfWeek = currentDate.getDay();
-            
-            if (budget.daysOfWeek.includes(dayOfWeek)) {
-              budgetTotal += budget.items.reduce((sum, item) => sum + item.amount, 0);
+            try {
+              const currentDate = new Date(selectedYear, selectedMonth, day);
+              // Verificar que la fecha sea válida
+              if (currentDate.getMonth() === selectedMonth && currentDate.getDate() === day) {
+                const dayOfWeek = currentDate.getDay();
+                
+                if (budget.daysOfWeek.includes(dayOfWeek)) {
+                  budgetTotal += budget.items.reduce((sum, item) => sum + item.amount, 0);
+                }
+              }
+            } catch (error) {
+              console.warn(`Fecha inválida: ${selectedYear}-${selectedMonth + 1}-${day}`);
+              continue;
             }
           }
         }

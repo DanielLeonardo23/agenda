@@ -10,6 +10,7 @@ import {
   Settings,
   ArrowRightLeft,
   Clock,
+  CreditCard,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ import {
 const menuItems = [
   { href: "/", label: "Panel", icon: LayoutDashboard },
   { href: "/transactions", label: "Transacciones", icon: ArrowRightLeft },
+  { href: "/accounts", label: "Cuentas", icon: CreditCard },
   { href: "/scheduled-payments", label: "Pagos Programados", icon: Clock },
   { href: "/budgets", label: "Presupuestos", icon: PiggyBank },
   { href: "/settings", label: "Configuración", icon: Settings },

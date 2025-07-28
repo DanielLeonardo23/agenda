@@ -13,12 +13,16 @@ import {
   deleteAccount as deleteAccountDb,
   updateAccountBalance as updateAccountBalanceDb,
   updateTransaction as updateTransactionDb,
-  executeRecurringPayments as executeRecurringPaymentsDb,
-  executeDailyBudgets as executeDailyBudgetsDb,
+  detectPendingRecurringPayments as detectPendingRecurringPaymentsDb,
+  detectPendingDailyBudgets as detectPendingDailyBudgetsDb,
+  approvePendingPayment as approvePendingPaymentDb,
+  rejectPendingPayment as rejectPendingPaymentDb,
+  cleanupOldPendingPayments as cleanupOldPendingPaymentsDb,
   deleteRecurringPayment as deleteRecurringPaymentDb,
   updateRecurringPayment as updateRecurringPaymentDb,
   updateDailyBudget as updateDailyBudgetDb
 } from "@/lib/data";
+import { migrateRecurringPayments } from "@/lib/migration";
 import type { FinancialData, Correction, SavingsSuggestion, AddTransactionData, AddRecurringPaymentData, AddDailyBudgetData, AddAccountData } from '@/lib/types';
 
 
@@ -146,7 +150,9 @@ export async function updateRecurringPaymentAction(data: {
   amount: number;
   category: string;
   dayOfMonth: number;
+  daysOfWeek?: number[];
   description?: string;
+  requiresApproval?: boolean;
 }) {
   const result = await updateRecurringPaymentDb(data);
   if (result.success) {
@@ -168,6 +174,55 @@ export async function updateDailyBudgetAction(data: {
   accountId?: string;
 }) {
   const result = await updateDailyBudgetDb(data);
+  if (result.success) {
+    revalidatePath('/');
+    revalidatePath('/scheduled-payments');
+  }
+  return result;
+}
+
+export async function detectPendingRecurringPaymentsAction() {
+  const result = await detectPendingRecurringPaymentsDb();
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
+
+export async function detectPendingDailyBudgetsAction() {
+  const result = await detectPendingDailyBudgetsDb();
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
+
+export async function approvePendingPaymentAction(pendingPaymentId: string) {
+  const result = await approvePendingPaymentDb(pendingPaymentId);
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
+
+export async function rejectPendingPaymentAction(pendingPaymentId: string) {
+  const result = await rejectPendingPaymentDb(pendingPaymentId);
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
+
+export async function cleanupOldPendingPaymentsAction() {
+  const result = await cleanupOldPendingPaymentsDb();
+  if (result.success) {
+    revalidatePath('/');
+  }
+  return result;
+}
+
+export async function migrateRecurringPaymentsAction() {
+  const result = await migrateRecurringPayments();
   if (result.success) {
     revalidatePath('/');
     revalidatePath('/scheduled-payments');

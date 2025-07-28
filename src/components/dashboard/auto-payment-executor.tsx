@@ -1,39 +1,65 @@
 "use client";
 
 import { useEffect } from "react";
-import { executeRecurringPaymentsAction, executeDailyBudgetsAction } from "@/app/actions";
+import { 
+  detectPendingRecurringPaymentsAction, 
+  detectPendingDailyBudgetsAction,
+  migrateRecurringPaymentsAction,
+  cleanupOldPendingPaymentsAction
+} from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 
 export function AutoPaymentExecutor() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const executeAutoPayments = async () => {
+    const initializeAutoPayments = async () => {
       try {
-        // Ejecutar pagos recurrentes
-        const recurringResult = await executeRecurringPaymentsAction();
-        if (recurringResult.success && recurringResult.executedPayments && recurringResult.executedPayments > 0) {
-          toast({
-            title: "Pagos Automáticos Ejecutados",
-            description: `${recurringResult.executedPayments} pagos recurrentes se ejecutaron automáticamente desde la cuenta BCP.`,
-          });
+        // Ejecutar migración una vez al cargar la aplicación
+        const migrationResult = await migrateRecurringPaymentsAction();
+        if (migrationResult.success && migrationResult.migrated && migrationResult.migrated > 0) {
+          console.log(`Migración completada: ${migrationResult.migrated} pagos recurrentes actualizados`);
         }
 
-        // Ejecutar presupuestos diarios
-        const dailyResult = await executeDailyBudgetsAction();
-        if (dailyResult.success && dailyResult.executedBudgets && dailyResult.executedBudgets > 0) {
+        // Limpiar pagos pendientes antiguos
+        const cleanupResult = await cleanupOldPendingPaymentsAction();
+        if (cleanupResult.success && cleanupResult.deletedCount && cleanupResult.deletedCount > 0) {
+          console.log(`Limpieza completada: ${cleanupResult.deletedCount} pagos pendientes limpiados`);
+        }
+
+        // Detectar pagos recurrentes pendientes
+        const recurringResult = await detectPendingRecurringPaymentsAction();
+        if (recurringResult.success) {
+          if (recurringResult.pendingPayments && recurringResult.pendingPayments > 0) {
+            toast({
+              title: "Pagos Pendientes Detectados",
+              description: `${recurringResult.pendingPayments} pagos recurrentes están pendientes de aprobación.`,
+            });
+          }
+          
+          if (recurringResult.executedPayments && recurringResult.executedPayments > 0) {
+            toast({
+              title: "Pagos Automáticos Ejecutados",
+              description: `${recurringResult.executedPayments} pagos recurrentes se ejecutaron automáticamente.`,
+            });
+          }
+        }
+
+        // Detectar presupuestos diarios pendientes
+        const dailyResult = await detectPendingDailyBudgetsAction();
+        if (dailyResult.success && dailyResult.pendingBudgets && dailyResult.pendingBudgets > 0) {
           toast({
-            title: "Presupuestos Diarios Ejecutados",
-            description: `${dailyResult.executedBudgets} presupuestos diarios se ejecutaron automáticamente desde la cuenta BCP.`,
+            title: "Presupuestos Diarios Pendientes",
+            description: `${dailyResult.pendingBudgets} presupuestos diarios están pendientes de aprobación.`,
           });
         }
       } catch (error) {
-        console.error("Error al ejecutar pagos automáticos:", error);
+        console.error("Error al inicializar pagos automáticos:", error);
       }
     };
 
     // Ejecutar una vez al cargar la aplicación
-    executeAutoPayments();
+    initializeAutoPayments();
   }, [toast]);
 
   // Este componente no renderiza nada visible
